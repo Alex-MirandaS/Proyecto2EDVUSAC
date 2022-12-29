@@ -1,0 +1,194 @@
+package Compilador;
+import java_cup.runtime.*;
+import java.util.ArrayList;
+import Proyecto.Conversor;
+import Proyecto.Simbolos;
+import Objetos.*;
+
+class Parser;
+/* CODIGO JAVA */
+
+parser code {:
+:}
+
+/* TERMINALES */
+
+terminal DIG, LETRA, WhiteSpace;
+terminal INCR, DECR, MAS, DIV, MEN, MULT, POT, MOD, ASIG, IGUAL, DESIG, MENORQ, MENORI, MAYORQ, MAYORI, PUNTO, COMA, PYCOMA, DOSPUNTOS, PARAB, PARCER, LLAB, LLCER, CORAB, CORCER, AND, OR, NOT, TER, GBAJO, COMS;
+terminal INT, DOUBLE, CHAR, BOOL, STRING;
+terminal VOID, MAIN, DEF, BRK, RTRN, CONT, CNSL, WRTE;
+terminal ELSE, IF, SWT, CASE, FOR, WHILE, DO;
+terminal NEW, TRUE, FALSE;
+terminal DECD, ENTD, COMENTM, COMENTS, CHARACD, BOOLEAD, ID, STRINGD; 
+
+/* NO TERMINAL */
+
+non terminal inicio, todo, asign, comen, sent, iff, elseif, swit,cas, forr, whil, dowhil, met, fun, llaMet, extra, impr, idList, expr, crecd, datList, tida, con, arre, param, paramList;
+/* PRECEDENCIA */
+
+precedence left OR;
+precedence left AND;
+precedence right NOT;
+precedence left IGUAL, DESIG, MENORQ, MENORI, MAYORQ, MAYORI;
+precedence left MAS, MEN;
+precedence left MULT, DIV, MOD;
+precedence left POT;
+precedence left con;
+
+inicio  ::= todo:t       
+        |   error         
+        ;
+
+todo    ::= comen todo
+        | comen
+        | asign todo
+        | asign
+        | met todo
+        | met
+        | fun todo
+        | fun
+        | llaMet todo
+        | llaMet
+        | sent todo
+        | sent
+        | impr todo
+        | impr
+        | extra todo
+        | extra
+        ;
+
+asign   ::= tida:td idList:ids PYCOMA               {:RESULT = new Asignacion(conversor.asignS((String)ids,(String)td,"none"));:}
+        |   tida:td idList:ids ASIG expr:ex PYCOMA  {:RESULT = new Asignacion(conversor.asignM((String)ids, (String)td,(String)ex,(String)ids+"="+(String)ex));:}                   
+        |   idList:ids ASIG expr:ex PYCOMA          {:RESULT = new Asignacion(conversor.asignM((String)ids, "N/I",(String)ex,(String)ids+"="+(String)ex));:}            
+        |   idList:ids PYCOMA                       {:RESULT = new Asignacion(conversor.asignM((String)ids, "N/I",(String)ex,(String)ids+"="+(String)ex));:}            
+        |   arre                                    {::}
+        ;
+
+comen   ::= COMENTS:d     {:RESULT = new Hoja((String)d); :}
+        | COMENTM:d       {:RESULT = new Hoja((String)d); :}       
+        ;
+   
+sent    ::= iff:s         {:RESULT = s;:}
+        |   swit:s        {:RESULT = -s;:}      
+        |   forr:s        {:RESULT = s;:}      
+        |   whil:s        {:RESULT = s;:}      
+        |   dowhil:s      {:RESULT = s;:}      
+        ;
+
+iff     ::= IF PARAB con:c PARCER LLAB todo:t LLCER elseif:el   {:((ArrayList <Instruccion>)t).addAll((ArrayList <Instruccion>)el); RESULT = new If("if "+(String)c+":", (ArrayList <Instruccion>)t);:}
+        |   IF PARAB con:c PARCER LLAB todo:t LLCER             {:RESULT = new If("if "+(String)c+":", ((ArrayList <Instruccion>)t));:}     
+        ;
+
+elseif  ::= ELSE IF PARAB con:c PARCER LLAB todo:t LLCER elseif:el  {:((ArrayList<Instruccion>)el).add(new Else("elif "+(String)c+":", (ArrayList <Instruccion>)t)); RESULT = el;:}
+        |   ELSE IF PARAB con:c PARCER LLAB todo:t LLCER            {:ArrayList<Instruccion> temp = new ArrayList<>(); temp.add(new Else("elif "+(String)c+":", (ArrayList <Instruccion>)t)); RESULT = temp;:}
+        |   ELSE LLAB todo:t LLCER                                  {:ArrayList<Instruccion> temp = new ArrayList<>(); temp.add(new Else("else:", (ArrayList <Instruccion>)t)); RESULT = temp;:}
+        ;
+
+swit    ::= SWT PARAB expr:ex PARCER LLAB cas:c LLCER            {:RESULT = new Switch("def switch(case,"+(String)ex+"):\n \t switcher = {",(ArrayList <Instruccion>)c);:}
+        ;
+
+cas     ::= CASE expr:ex DOSPUNTOS todo:t cas:c                  {:((ArrayList<Instruccion>)c).add(new Case((String)ex+":", (ArrayList <Instruccion>)t)); RESULT = c;:}                       
+        |   CASE expr:ex DOSPUNTOS todo:t                        {:ArrayList<Instruccion> temp = new ArrayList<>(); temp.add(new Case((String)ex+":", (ArrayList <Instruccion>)t)); RESULT = temp;:}       
+        |   DEF DOSPUNTOS todo:t                                 {:ArrayList<Instruccion> temp = new ArrayList<>(); temp.add(new Case("default:", (ArrayList <Instruccion>)t)); RESULT = temp;:}       
+        ;
+
+forr    ::= FOR PARAB INT ID:id ASIG expr:ex PYCOMA con:c PYCOMA crecd PARCER LLAB todo:t LLCER {: RESULT = new For("for "+(String)id+" in range("+(String)ex+","+(String)c+"):", (ArrayList <Instruccion>)t);:}
+        ;
+        
+whil    ::= WHILE PARAB con:c PARCER LLAB todo:t LLCER    {:RESULT = new While("while "+(String)c+" :",(ArrayList<Instruccion>)t);:}            
+        ;
+
+dowhil  ::= DO LLAB todo:t LLCER WHILE PARAB con:c PARCER PYCOMA {:RESULT = new DoWhile("while TRUE:-if("+(String)c+"):\n \t break", (ArrayList<Instruccion>)t);:}    
+        ;
+
+met     ::= VOID ID:id PARAB param:p PARCER LLAB todo:t LLCER   {:RESULT = new Metodo("def "+(String)id+"("+(String)p+"):",(ArrayList <Instruccion>)t);:}
+        |   VOID ID:id PARAB param:p PARCER LLAB LLCER          {:RESULT = new Metodo("def "+(String)id+"("+(String)p+"):",null);:}
+        |   VOID ID:id PARAB PARCER LLAB todo:t LLCER           {:RESULT = new Metodo("def "+(String)id+"():", (ArrayList <Instruccion>)t);:}   
+        |   VOID ID:id PARAB PARCER LLAB LLCER                  {:RESULT = new Metodo("def "+(String)id+"():", null);:}   
+        ;
+
+fun     ::= tida ID:id PARAB param:p PARCER LLAB todo:t LLCER   {:RESULT = new Funcion("def "+(String)id+"("+(String)p+"):",(ArrayList <Instruccion>)t);:}
+        |   tida ID:id PARAB param:p PARCER LLAB LLCER          {:RESULT = new Funcion("def "+(String)id+"("+(String)p+"):",null);:}
+        |   tida ID:id PARAB PARCER LLAB todo:t LLCER           {:RESULT = new Funcion("def "+(String)id+"():",(ArrayList <Instruccion>)t);:}
+        |   tida ID:id PARAB PARCER LLAB LLCER                  {:RESULT = new Funcion("def "+(String)id+"():",null);:}
+        ;
+
+llaMet  ::= ID:id PARAB PARCER           {:RESULT = new LlMetodo((String)id+"()");:}                                                    
+        | ID:id PARAB paramList:p PARCER {:RESULT = new LlMetodo((String)id+"("+(String)p+")");:}
+        ;        
+
+extra  ::= crecd PYCOMA
+        |   RTRN PYCOMA           {:RESULT = new BCR("return");:}
+        |   RTRN expr:ex PYCOMA   {:RESULT = new BCR("return"+(String)ex);:}
+        |   BRK PYCOMA            {:RESULT = new BCR("break");:}
+        |   CONT PYCOMA           {:RESULT = new BCR("continue");:}
+        ;
+
+impr    ::= WRTE PARAB expr:ex PARCER PYCOMA    {: conversor.agregarHTML((String)ex); RESULT = new Write((String)ex);:}    
+        ;
+        
+idList  ::= ID:id COMA idList:s                     {:RESULT = (String) id+","+(String)s;:}                   
+        |   ID:id                                   {:RESULT = (String) id;:}   
+        ;
+
+expr    ::= expr:ex1 MAS expr:ex2       {::}                             
+        | expr:ex1 MEN expr:ex2         {::}                                                    
+        | expr:ex1 MULT expr:ex2        {::}                                                    
+        | expr:ex1 DIV expr:ex2         {::}
+        | expr:ex1 POT expr:ex2         {::}
+        | expr:ex1 MOD expr:ex2         {::}
+        | MEN expr                      {::}                                                                                 
+        | PARAB expr:ex PARCER          {::}
+        | ID CORAB expr CORCER          {::}
+        | con TER expr DOSPUNTOS expr   {::}
+        | crecd                         {::}
+        | llaMet:d                      {::}
+        | datList:d                     {::}                  
+        ;       
+
+crecd  ::= ID INCR
+        |   ID DECR
+        |   INCR ID
+        |   DECR ID
+        ;   
+
+datList ::= ENTD:d                  {: RESULT = (String)d;:}
+        |   DECD:d                  {: RESULT = (String)d;:}
+        |   ID:d                    {: RESULT = (String)d;:}
+        |   BOOLEAD:d               {: RESULT = (String)d;:}
+        |   STRINGD:d               {: RESULT = (String)d;:}
+        |   CHARACD:d               {: RESULT = (String)d;:}
+        ;   
+
+tida    ::= INT:d               {:RESULT = "int";:}
+        |   DOUBLE:d            {:RESULT = "double";:}
+        |   CHAR:d              {:RESULT = "char";:}
+        |   BOOL:d              {:RESULT = "bool";:}
+        |   STRING:d            {:RESULT = "string";:}
+        ;    
+
+con     ::= con:ex1 IGUAL con:ex2     {::} 
+        |   con:ex1 DESIG con:ex2     {::} 
+        |   con:ex1 MENORQ con:ex2    {::} 
+        |   con:ex1 MENORI con:ex2    {::} 
+        |   con:ex1 MAYORQ con:ex2    {::} 
+        |   con:ex1 MAYORI con:ex2    {::} 
+        |   con:ex1 AND con:ex2       {::} 
+        |   NOT con:ex1               {::}  
+        |   con:ex1 OR con:ex2        {::} 
+        |   expr:ex1                  {::}
+        ;
+
+arre    ::= tida ID CORAB CORCER ASIG NEW tida CORAB expr CORCER PYCOMA
+        |   tida ID CORAB CORCER ASIG LLAB paramList LLCER PYCOMA
+        |   ID CORAB expr CORCER ASIG expr PYCOMA
+        ;    
+
+param   ::= tida ID:id COMA param:p          {:RESULT = (String)id+","+(String)p;:}
+        |   tida ID:id                       {:RESULT = (String)id;:}
+        ;
+
+paramList   ::= datList:d COMA paramList:p {::}
+            |   datList:d                  {::}     
+            ;  
+
