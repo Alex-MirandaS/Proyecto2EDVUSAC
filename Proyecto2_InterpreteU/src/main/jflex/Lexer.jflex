@@ -1,7 +1,7 @@
 package Compilador;
 import java_cup.runtime.Symbol;
 import Compilador.ParserSym;
-import Objetos.ErrorLS;
+import Objetos.ErrorLSS;
 import java.util.ArrayList;
 %%
 

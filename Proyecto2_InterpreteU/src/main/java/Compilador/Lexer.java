@@ -5,7 +5,7 @@
 package Compilador;
 import java_cup.runtime.Symbol;
 import Compilador.ParserSym;
-import Objetos.ErrorLS;
+import Objetos.ErrorLSS;
 import java.util.ArrayList;
 
 // See https://github.com/jflex-de/jflex/issues/222
@@ -658,7 +658,7 @@ public class Lexer implements java_cup.runtime.Scanner {
   private boolean zzEOFDone;
 
   /* user code: */
-    private ArrayList <ErrorLS> errores = new ArrayList();
+    private ArrayList <ErrorLSS> errores = new ArrayList();
 //CUP
     StringBuffer string = new StringBuffer();
 
@@ -670,7 +670,7 @@ public class Lexer implements java_cup.runtime.Scanner {
         return new Symbol(type, yyline+1, yycolumn+1, value);
     }
 
-    public ArrayList<ErrorLS> getErrores(){
+    public ArrayList<ErrorLSS> getErrores(){
         return errores;
     }
     
@@ -1086,7 +1086,7 @@ public class Lexer implements java_cup.runtime.Scanner {
       else {
         switch (zzAction < 0 ? zzAction : ZZ_ACTION[zzAction]) {
           case 1:
-            { errores.add(new ErrorLS(yyline,yycolumn,"Lexico","El Simbolo: "+yytext()+" es inválido"));
+            { errores.add(new ErrorLSS(yyline,yycolumn,"Lexico","El Simbolo: "+yytext()+" es inválido"));
             }
             // fall through
           case 67: break;
