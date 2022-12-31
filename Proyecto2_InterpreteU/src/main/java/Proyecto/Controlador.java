@@ -137,17 +137,23 @@ public class Controlador {
         return new Padre("Expresion", TipoNodo.EXPRESION, temp);
     }
 
-    public Padre newIncr(String id, String sim, boolean idPrim) {
+    public Padre newIncr(String id, String sim, boolean idPrim, Nodo ex) {
 
         ArrayList<Nodo> temp = new ArrayList<>();
-        if (idPrim) {
+        if (ex != null) {
             temp.add(new Hoja(id, TipoNodo.IDENTIFICADOR));
-            temp.add(new Hoja(sim, TipoNodo.INCR));
+            temp.add(new Hoja("=", TipoNodo.IGUAL));
+            temp.add(ex);
         } else {
-            temp.add(new Hoja(sim, TipoNodo.INCR));
-            temp.add(new Hoja(id, TipoNodo.IDENTIFICADOR));
+            if (idPrim) {
+                temp.add(new Hoja(id, TipoNodo.IDENTIFICADOR));
+                temp.add(new Hoja(sim, TipoNodo.INCR));
+            } else {
+                temp.add(new Hoja(sim, TipoNodo.INCR));
+                temp.add(new Hoja(id, TipoNodo.IDENTIFICADOR));
+            }
         }
-        return new Padre("Incremento/Decremento", TipoNodo.INCR, temp);
+        return new Padre("ACTUALIZACIÓN", TipoNodo.ACT, temp);
     }
 
     public Padre newTer(String td, ArrayList<Nodo> ids, Nodo c, Nodo ex1, Nodo ex2) {
@@ -356,6 +362,47 @@ public class Controlador {
         temp.add(new Padre("Sentencias", TipoNodo.SENT, sentencias));
         temp.add(new Hoja("}", TipoNodo.SIMBOLO));
         return new Padre("WHILE", TipoNodo.WHILE, temp);
+    }
+
+    public Padre newDoWhil(Nodo c, ArrayList<Nodo> sentencias) {
+        ArrayList<Nodo> temp = new ArrayList<>();
+        temp.add(new Hoja("Do", TipoNodo.DO));
+        temp.add(new Hoja("{", TipoNodo.SIMBOLO));
+        temp.add(new Padre("Sentencias", TipoNodo.SENT, sentencias));
+        temp.add(new Hoja("}", TipoNodo.SIMBOLO));
+
+        temp.add(new Hoja("while", TipoNodo.WHILE));
+        temp.add(new Hoja("(", TipoNodo.SIMBOLO));
+        temp.add(c);
+        temp.add(new Hoja(")", TipoNodo.SIMBOLO));
+        return new Padre("DO_WHILE", TipoNodo.DOWHILE, temp);
+    }
+
+    public Padre newDeas(String td, String id, Nodo ex) {
+        ArrayList<Nodo> temp = new ArrayList<>();
+        if (td != null) {
+            temp.add(new Hoja(td, TipoNodo.TIPODATO));
+        }
+        temp.add(new Hoja(id, TipoNodo.IDENTIFICADOR));
+        temp.add(new Hoja("=", TipoNodo.IGUAL));
+        temp.add(ex);
+        return new Padre("DEAS", TipoNodo.DEAS, temp);
+    }
+
+    public Padre newFor(Nodo d, Nodo c, Nodo cr, ArrayList<Nodo> sentencias) {
+        ArrayList<Nodo> temp = new ArrayList<>();
+        temp.add(new Hoja("for", TipoNodo.FOR));
+        temp.add(new Hoja("(", TipoNodo.SIMBOLO));
+        temp.add(d);
+        temp.add(new Hoja(";", TipoNodo.SIMBOLO));
+        temp.add(c);
+        temp.add(new Hoja(";", TipoNodo.SIMBOLO));
+        temp.add(cr);
+        temp.add(new Hoja(")", TipoNodo.SIMBOLO));
+        temp.add(new Hoja("{", TipoNodo.SIMBOLO));
+        temp.add(new Padre("Sentencias", TipoNodo.SENT, sentencias));
+        temp.add(new Hoja("}", TipoNodo.SIMBOLO));
+        return new Padre("FOR", TipoNodo.FOR, temp);
     }
 
 }

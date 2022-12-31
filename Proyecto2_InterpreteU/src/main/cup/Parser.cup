@@ -61,7 +61,7 @@ terminal DECD, ENTD, COMENTM, COMENTS, CHARACD, BOOLEAD, ID, STRINGD;
 
 /* NO TERMINAL */
 
-non terminal inicio, todo, asign, comen, sent, iff, elseif, swit,cas, forr, whil, dowhil, met, fun, llaMet, extra, impr, idList, expr, crecd, datList, tida, con, arre, param, paramList, ter;
+non terminal inicio, todo, asign, comen, sent, iff, elseif, swit,cas, forr, whil, dowhil, met, fun, llaMet, extra, impr, idList, expr, crecd, datList, tida, con, arre, param, paramList, ter, deas;
 /* PRECEDENCIA */
 
 precedence left OR;
@@ -71,7 +71,6 @@ precedence left IGUAL, DESIG, MENORQ, MENORI, MAYORQ, MAYORI;
 precedence left MAS, MEN;
 precedence left MULT, DIV, MOD;
 precedence left POT;
-precedence left expr;
 
 inicio  ::= todo:t              {:nodos = ((ArrayList<Nodo>)t);:}       
         |   error         
@@ -131,13 +130,13 @@ cas     ::= CASE expr:ex DOSPUNTOS todo:t cas:c                  {:RESULT = cont
         |   DEF DOSPUNTOS todo:t                                 {:RESULT = control.newCas(null, (ArrayList<Nodo>)t, null);:}
         ;
 
-forr    ::= FOR PARAB INT ID:id ASIG expr:ex PYCOMA con:c PYCOMA crecd PARCER LLAB todo:t LLCER {: RESULT = new For("for "+(String)id+" in range("+(String)ex+","+(String)c+"):", (ArrayList <Instruccion>)t);:}
+forr    ::= FOR PARAB deas:d PYCOMA con:c PYCOMA crecd:cr PARCER LLAB todo:t LLCER {: RESULT = new For("for "+(String)id+" in range("+(String)ex+","+(String)c+"):", (ArrayList <Instruccion>)t);:}
         ;
-        
-whil    ::= WHILE PARAB con:c PARCER LLAB todo:t LLCER    {:RESULT = newWhil((Nodo) c, (ArrayList<Nodo>)t);:}
+       
+whil    ::= WHILE PARAB con:c PARCER LLAB todo:t LLCER          {:RESULT = control.newWhil((Nodo) c, (ArrayList<Nodo>)t);:}
         ;
 
-dowhil  ::= DO LLAB todo:t LLCER WHILE PARAB con:c PARCER PYCOMA {:RESULT = new DoWhile("while TRUE:-if("+(String)c+"):\n \t break", (ArrayList<Instruccion>)t);:}    
+dowhil  ::= DO LLAB todo:t LLCER WHILE PARAB con:c PARCER PYCOMA {:RESULT = control.newDoWhil((Nodo) c, (ArrayList<Nodo>)t);:}
         ;
 
 met     ::= VOID ID:id PARAB param:p PARCER LLAB todo:t LLCER   {:RESULT = control.newMet((String) id, (ArrayList<Nodo>) p, (ArrayList<Nodo>)t);:}
@@ -188,10 +187,11 @@ ter     ::= tida:td idList:ids ASIG con:c TER expr:ex1 DOSPUNTOS expr:ex2 PYCOMA
         |   idList:ids ASIG con:c TER expr:ex1 DOSPUNTOS expr:ex2 PYCOMA          {:RESULT = control.newTer(null, (ArrayList<Nodo>)ids,(Nodo)c,(Nodo)ex1,(Nodo)ex2);:}            
         ;
 
-crecd   ::= ID:id INCR:sim              {:RESULT = control.newIncr((String)id,(String)sim,true);:}
-        |   ID:id DECR:sim              {:RESULT = control.newIncr((String)id,(String)sim,true);:}
-        |   INCR:sim ID:id              {:RESULT = control.newIncr((String)id,(String)sim,false);:}
-        |   DECR:sim ID:id              {:RESULT = control.newIncr((String)id,(String)sim,false);:}
+crecd   ::= ID:id INCR:sim              {:RESULT = control.newIncr((String)id,(String)sim,true, null);:}
+        |   ID:id DECR:sim              {:RESULT = control.newIncr((String)id,(String)sim,true, null);:}
+        |   INCR:sim ID:id              {:RESULT = control.newIncr((String)id,(String)sim,false, null);:}
+        |   DECR:sim ID:id              {:RESULT = control.newIncr((String)id,(String)sim,false, null);:}
+        |   ID:id ASIG expr:ex          {:RESULT = control.newIncr((String)id,null,false, (Nodo)ex);:}
         ;   
 
 datList ::= ENTD:d                  {: RESULT = new Hoja((String)d, TipoNodo.INT);:}
@@ -233,4 +233,9 @@ param   ::= tida:td ID:id COMA param:p          {:RESULT = control.recDerParam((
 paramList   ::= datList:d COMA paramList:p {:RESULT = control.recDer((ArrayList<Nodo>)p, (Nodo)d);:}                   
             |   datList:d                  {:RESULT = control.finProd((Nodo)d);:}     
             ;  
+
+deas    ::= tida:td ID:id ASIG expr:ex  {:RESULT = control.newDeas((String)td, (String)id, (Nodo)ex);:}
+        |   ID:id ASIG expr:ex          {:RESULT = control.newDeas(null, (String)id, (Nodo)ex);:}
+        ;
+
 
