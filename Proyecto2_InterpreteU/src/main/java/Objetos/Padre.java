@@ -17,7 +17,7 @@ public class Padre extends Nodo {
 
     public Padre(String valor, TipoNodo tipo, ArrayList<Nodo> hijos) {
         super(valor, tipo);
-        this.hijos = hijos;       
+        this.hijos = hijos;
     }
 
     public ArrayList<Nodo> getHijos() {
@@ -26,6 +26,17 @@ public class Padre extends Nodo {
 
     public void setHijos(ArrayList<Nodo> hijos) {
         this.hijos = hijos;
+    }
+
+    @Override
+    public String getGrafica() {
+        String graf = "nodo" + getNumNodo() + "[label=\"" + getValor() + "\"] ;\n";
+        if (hijos != null && !hijos.isEmpty()) {
+            for (Nodo hijo : hijos) {
+                graf += "nodo" + getNumNodo() + " -> " + "nodo" + hijo.getNumNodo() + "\n" + hijo.getGrafica();
+            }
+        }
+        return graf;
     }
 
 }

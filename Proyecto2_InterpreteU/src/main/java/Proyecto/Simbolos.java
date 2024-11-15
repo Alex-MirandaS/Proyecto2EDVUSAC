@@ -4,15 +4,18 @@
  */
 package Proyecto;
 
+import Objetos.TipoNodo;
+
 /**
  *
  * @author alex
  */
 public class Simbolos {
     
-    private String id, tipo, valor;
+    private String id, valor;
+    private TipoNodo tipo;
 
-    public Simbolos(String id, String tipo, String valor) {
+    public Simbolos(String id, TipoNodo tipo, String valor) {
         this.id = id;
         this.tipo = tipo;
         this.valor = valor;
@@ -34,11 +37,11 @@ public class Simbolos {
         this.id = id;
     }
 
-    public String getTipo() {
+    public TipoNodo getTipo() {
         return tipo;
     }
 
-    public void setTipo(String tipo) {
+    public void setTipo(TipoNodo tipo) {
         this.tipo = tipo;
     }
     

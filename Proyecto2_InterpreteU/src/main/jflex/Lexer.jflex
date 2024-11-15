@@ -51,6 +51,9 @@ LETRA = [a-zA-Z]
 LineTerminator = [\r|\n|\r\n]
 InputCharacter = [^\r\n]
 WhiteSpace = [ \t\r\n\v\b]
+TraditionalComment   = "/*" [^*] ~"*/" | "/*" "*"+ "/"
+DocumentationComment = "/**" {CommentContent} "*"+ "/"
+CommentContent       = ( [^*] | \*+ [^/*] )*
 
 //CARACTERES
 
@@ -91,7 +94,7 @@ COMS = "'"
 INT = (("i")("n")("t"))
 DOUBLE = (("d")("o")("u")("b")("l")("e"))
 CHAR = (("c")("h")("a")("r"))
-BOOL = (("b")("o")("o")("l"))
+BOOL = (("b")("o")("o")("l")("e")("a")("n"))
 STRING = (("s")("t")("r")("i")("n")("g"))
 //PALABRAS RESERVADAS
 VOID = (("v")("o")("i")("d"))
@@ -118,7 +121,7 @@ FALSE = (("f")("a")("l")("s")("e"))
 
 //ESTRUCTURAS LEXICAS
 
-COMENTM   = "/*" [^*] ~"*/" | "/*" "*"+ "/"
+COMENTM   = {TraditionalComment}|{DocumentationComment}
 COMENTS = "//" {InputCharacter}* {LineTerminator}?
 DECD = {DIG}+{PUNTO}{DIG}+
 ENTD = {DIG}+

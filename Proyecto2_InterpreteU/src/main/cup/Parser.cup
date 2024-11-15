@@ -1,9 +1,9 @@
 package Compilador;
 import java_cup.runtime.*;
 import java.util.ArrayList;
-import Proyecto.Conversor;
 import Proyecto.Simbolos;
 import Objetos.*;
+import Proyecto.Controlador;
 
 class Parser;
 /* CODIGO JAVA */
@@ -12,7 +12,6 @@ parser code {:
 /* CAPTURA DEL PROGRAMA */
 
     private ArrayList <Nodo> nodos = new ArrayList();
-    private ArrayList <Simbolos> tSimbolos = new ArrayList();
     private ArrayList <ErrorLSS> errores = new ArrayList();
     private Controlador control = new Controlador();    
 
@@ -37,16 +36,17 @@ public void syntax_error(Symbol s){
     }
 
     public ArrayList<Nodo> getNodos(){
-        return instrucciones;
-    }
-
-    public ArrayList<Simbolos> getTSimbolos(){
-        return tSimbolos;
+        return nodos;
     }
 
     public ArrayList<ErrorLSS> getErrores(){
         return errores;
     }
+
+    public Controlador getControl(){
+        return control;
+    }
+
 :}
 
 /* TERMINALES */
@@ -61,7 +61,7 @@ terminal DECD, ENTD, COMENTM, COMENTS, CHARACD, BOOLEAD, ID, STRINGD;
 
 /* NO TERMINAL */
 
-non terminal inicio, todo, asign, comen, sent, iff, elseif, swit,cas, forr, whil, dowhil, met, fun, llaMet, extra, impr, idList, expr, crecd, datList, tida, con, arre, param, paramList, ter, deas;
+non terminal inicio, todo, asign, comen, sent, iff, elseif, swit,cas, forr, whil, dowhil, met, fun, llaMet, extra, impr, idList, expr, crecd, datList, tida, con, arre, param, paramList, ter, deas, act;
 /* PRECEDENCIA */
 
 precedence left OR;
@@ -72,8 +72,7 @@ precedence left MAS, MEN;
 precedence left MULT, DIV, MOD;
 precedence left POT;
 
-inicio  ::= todo:t              {:nodos = ((ArrayList<Nodo>)t);:}       
-        |   error         
+inicio  ::= todo:t              {:nodos = ((ArrayList<Nodo>)t);:}               
         ;
 
 todo    ::= comen:i todo:t              {:RESULT = control.recDer((ArrayList<Nodo>)t,(Nodo)i);:}
@@ -91,15 +90,16 @@ todo    ::= comen:i todo:t              {:RESULT = control.recDer((ArrayList<Nod
         | impr:i todo:t                 {:RESULT = control.recDer((ArrayList<Nodo>)t,(Nodo)i);:}
         | impr:i                        {:RESULT = control.finProd((Nodo)i);:}       
         | extra:i todo:t                {:RESULT = control.recDer((ArrayList<Nodo>)t,(Nodo)i);:}
-        | extra:i                       {:RESULT = control.finProd((Nodo)i);:}       
+        | extra:i                       {:RESULT = control.finProd((Nodo)i);:}      
+        | error todo:t                  {:RESULT = t;:} 
         ;
 
-asign   ::= tida:td idList:ids PYCOMA               {:RESULT = control.newAsig((String) td,(ArrayList<Nodo>)ids, null);:}
-        |   tida:td idList:ids ASIG expr:ex PYCOMA  {:RESULT = control.newAsig((String) td,(ArrayList<Nodo>)ids, Nodo ex);:} 
-        |   idList:ids ASIG expr:ex PYCOMA          {:RESULT = control.newAsig(null,(ArrayList<Nodo>)ids, Nodo ex);:}
+asign   ::= ter:t                                   {:RESULT = t;:}
+        |   tida:td idList:ids PYCOMA               {:RESULT = control.newAsig((String) td,(ArrayList<Nodo>)ids, null);:}
+        |   tida:td idList:ids ASIG expr:ex PYCOMA  {:RESULT = control.newAsig((String) td,(ArrayList<Nodo>)ids, (Nodo) ex);:} 
+        |   idList:ids ASIG expr:ex PYCOMA          {:RESULT = control.newAsig(null,(ArrayList<Nodo>)ids, (Nodo) ex);:}
         |   idList:ids PYCOMA                       {:RESULT = control.newAsig(null,(ArrayList<Nodo>)ids, null);:}
-        |   arre:a                                  {:RESULT = a;}
-        |   ter:t                                   {:RESULT = t;:}    
+        |   arre:a                                  {:RESULT = a;:}    
         ;
 
 comen   ::= COMENTS:d     {:RESULT = new Hoja((String)d, TipoNodo.COMENT);:}
@@ -130,8 +130,12 @@ cas     ::= CASE expr:ex DOSPUNTOS todo:t cas:c                  {:RESULT = cont
         |   DEF DOSPUNTOS todo:t                                 {:RESULT = control.newCas(null, (ArrayList<Nodo>)t, null);:}
         ;
 
-forr    ::= FOR PARAB deas:d PYCOMA con:c PYCOMA crecd:cr PARCER LLAB todo:t LLCER {: RESULT = new For("for "+(String)id+" in range("+(String)ex+","+(String)c+"):", (ArrayList <Instruccion>)t);:}
+forr    ::= FOR PARAB deas:d PYCOMA con:c PYCOMA act:a PARCER LLAB todo:t LLCER {: RESULT = control.newFor((Nodo) d, (Nodo) c, (Nodo)a, (ArrayList<Nodo>)t);:}
         ;
+
+act     ::= crecd:c                     {:RESULT = c;:}
+        |   ID:id ASIG expr:ex          {:RESULT = control.newIncr((String)id,null,false, (Nodo)ex);:}  
+        ;       
        
 whil    ::= WHILE PARAB con:c PARCER LLAB todo:t LLCER          {:RESULT = control.newWhil((Nodo) c, (ArrayList<Nodo>)t);:}
         ;
@@ -162,11 +166,11 @@ extra  ::=  crecd:c PYCOMA        {:RESULT = c;:}
         |   CONT PYCOMA           {:RESULT = control.newBCR(TipoNodo.CONT, null);:}
         ;
 
-impr    ::= WRTE PARAB expr:ex PARCER PYCOMA        {: RESULT = control.newWrtLn((Nodo)ex);:}    
+impr    ::= WRTE PARAB expr:ex PARCER PYCOMA        {:;RESULT = control.newWrtLn((Nodo)ex);:}    
         ;
         
 idList  ::= ID:id COMA idList:s                     {:RESULT = control.recDer((ArrayList<Nodo>)s, new Hoja((String)id, TipoNodo.IDENTIFICADOR));:}                   
-        |   ID:id                                   {:RESULT = control.recDer(new Hoja((String)id, TipoNodo.IDENTIFICADOR));:}   
+        |   ID:id                                   {:RESULT = control.finProd(new Hoja((String)id, TipoNodo.IDENTIFICADOR));:}   
         ;
 
 expr    ::= expr:ex1 MAS expr:ex2       {:RESULT = control.newExp((Nodo)ex1, TipoNodo.MAS, (Nodo)ex2, null);:}                             
@@ -180,7 +184,7 @@ expr    ::= expr:ex1 MAS expr:ex2       {:RESULT = control.newExp((Nodo)ex1, Tip
         | ID:id CORAB expr:ex1 CORCER   {:RESULT = control.newExp((Nodo)ex1, TipoNodo.ARR, null, (String)id);:}                                                                                                              
         | crecd:d                       {:RESULT = d;:}
         | llaMet:d                      {:RESULT = d;:}
-        | datList:d                     {:RESULT = d;:}                  
+        | datList:d                     {:RESULT = d;:}    
         ;       
 
 ter     ::= tida:td idList:ids ASIG con:c TER expr:ex1 DOSPUNTOS expr:ex2 PYCOMA  {:RESULT = control.newTer((String)td, (ArrayList<Nodo>)ids,(Nodo)c,(Nodo)ex1,(Nodo)ex2);:}
@@ -191,15 +195,14 @@ crecd   ::= ID:id INCR:sim              {:RESULT = control.newIncr((String)id,(S
         |   ID:id DECR:sim              {:RESULT = control.newIncr((String)id,(String)sim,true, null);:}
         |   INCR:sim ID:id              {:RESULT = control.newIncr((String)id,(String)sim,false, null);:}
         |   DECR:sim ID:id              {:RESULT = control.newIncr((String)id,(String)sim,false, null);:}
-        |   ID:id ASIG expr:ex          {:RESULT = control.newIncr((String)id,null,false, (Nodo)ex);:}
         ;   
 
 datList ::= ENTD:d                  {: RESULT = new Hoja((String)d, TipoNodo.INT);:}
         |   DECD:d                  {: RESULT = new Hoja((String)d, TipoNodo.DOUBLE);:}
         |   ID:d                    {: RESULT = new Hoja((String)d, TipoNodo.ID);:}
         |   BOOLEAD:d               {: RESULT = new Hoja((String)d, TipoNodo.BOOLEAN);:}
-        |   STRINGD:d               {: RESULT = new Hoja((String)d, TipoNodo.STRING);:}
-        |   CHARACD:d               {: RESULT = new Hoja((String)d, TipoNodo.CHAR);:}
+        |   CHARACD:d               {: RESULT = new Hoja(((String)d).replace("'",""), TipoNodo.CHAR);:}
+        |   STRINGD:d               {: RESULT = new Hoja(((String)d).replace("\"",""), TipoNodo.STRING);:}             
         ;   
 
 tida    ::= INT:d               {:RESULT = "int";:}
@@ -209,21 +212,21 @@ tida    ::= INT:d               {:RESULT = "int";:}
         |   STRING:d            {:RESULT = "string";:}
         ;    
 
-con     ::= con:ex1 IGUAL con:ex2     {:RESULT = control.newCond((Nodo)ex1, TipoNodo.IGUAL, (Nodo)ex2, null);:}                             
-        |   con:ex1 DESIG con:ex2     {:RESULT = control.newCond((Nodo)ex1, TipoNodo.DESIG, (Nodo)ex2, null);:}                             
-        |   con:ex1 MENORQ con:ex2    {:RESULT = control.newCond((Nodo)ex1, TipoNodo.MENORQ, (Nodo)ex2, null);:}                             
-        |   con:ex1 MENORI con:ex2    {:RESULT = control.newCond((Nodo)ex1, TipoNodo.MENORI, (Nodo)ex2, null);:}                             
-        |   con:ex1 MAYORQ con:ex2    {:RESULT = control.newCond((Nodo)ex1, TipoNodo.MAYORQ, (Nodo)ex2, null);:}                             
-        |   con:ex1 MAYORI con:ex2    {:RESULT = control.newCond((Nodo)ex1, TipoNodo.MAYORI, (Nodo)ex2, null);:}                             
-        |   con:ex1 AND con:ex2       {:RESULT = control.newCond((Nodo)ex1, TipoNodo.AND, (Nodo)ex2, null);:}                             
-        |   NOT con:ex1               {:RESULT = control.newCond((Nodo)ex1, TipoNodo.NOT, (Nodo)ex2, null);:}                             
-        |   con:ex1 OR con:ex2        {:RESULT = control.newCond((Nodo)ex1, TipoNodo.OR, (Nodo)ex2, null);:}                             
+con     ::= con:ex1 IGUAL con:ex2     {:RESULT = control.newCond((Nodo)ex1, TipoNodo.IGUAL, (Nodo)ex2);:}                             
+        |   con:ex1 DESIG con:ex2     {:RESULT = control.newCond((Nodo)ex1, TipoNodo.DESIG, (Nodo)ex2);:}                             
+        |   con:ex1 MENORQ con:ex2    {:RESULT = control.newCond((Nodo)ex1, TipoNodo.MENORQ, (Nodo)ex2);:}                             
+        |   con:ex1 MENORI con:ex2    {:RESULT = control.newCond((Nodo)ex1, TipoNodo.MENORI, (Nodo)ex2);:}                             
+        |   con:ex1 MAYORQ con:ex2    {:RESULT = control.newCond((Nodo)ex1, TipoNodo.MAYORQ, (Nodo)ex2);:}                             
+        |   con:ex1 MAYORI con:ex2    {:RESULT = control.newCond((Nodo)ex1, TipoNodo.MAYORI, (Nodo)ex2);:}                             
+        |   con:ex1 AND con:ex2       {:RESULT = control.newCond((Nodo)ex1, TipoNodo.AND, (Nodo)ex2);:}                             
+        |   NOT con:ex1               {:RESULT = control.newCond((Nodo)ex1, TipoNodo.NOT, null);:}                             
+        |   con:ex1 OR con:ex2        {:RESULT = control.newCond((Nodo)ex1, TipoNodo.OR, (Nodo)ex2);:}                             
         |   expr:ex1                  {:RESULT = ex1;:}
         ;
 
-arre    ::= tida:td1 ID:id CORAB CORCER ASIG NEW tida:td2 CORAB expr:ex CORCER PYCOMA {:RESULT = control.newArr((String)td1,(String)id,(String)td2,null,(String)ex, null);:}
+arre    ::= tida:td1 ID:id CORAB CORCER ASIG NEW tida:td2 CORAB expr:ex CORCER PYCOMA {:RESULT = control.newArr((String)td1,(String)id,(String)td2,null,(Nodo)ex, null);:}
         |   tida:td ID:id CORAB CORCER ASIG LLAB paramList:pa LLCER PYCOMA            {:RESULT = control.newArr((String)td,(String)id,null,(ArrayList<Nodo>)pa,null, null);:}  
-        |   ID:id CORAB expr:ex1 CORCER ASIG expr:ex2 PYCOMA                          {:RESULT = control.newArr(null,(String)id,null,null,(String)ex1, (String)ex2);:}    
+        |   ID:id CORAB expr:ex1 CORCER ASIG expr:ex2 PYCOMA                          {:RESULT = control.newArr(null,(String)id,null,null,(Nodo)ex1, (Nodo)ex2);:}    
         ;    
 
 param   ::= tida:td ID:id COMA param:p          {:RESULT = control.recDerParam((String) td, (String) id, (ArrayList<Nodo>) p);:}                   

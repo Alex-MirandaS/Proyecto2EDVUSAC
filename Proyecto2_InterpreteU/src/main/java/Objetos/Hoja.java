@@ -16,4 +16,10 @@ public class Hoja extends Nodo {
         super(valor, tipo);
     }
 
+    @Override
+    public String getGrafica() {
+        String graf = "nodo"+getNumNodo()+" [label=\""+getValor()+"\"] ;\n";
+        return graf;
+    }
+
 }

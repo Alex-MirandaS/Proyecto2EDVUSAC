@@ -1,0 +1,8 @@
+digraph L{
+     subgraph instrucciones
+     {
+     label="RAIZ"
+nodo34;
+nodo34[label="RAIZ"] ;
+}
+}
